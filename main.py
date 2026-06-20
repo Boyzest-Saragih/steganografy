@@ -19,7 +19,7 @@ def main():
 
     # 2. Parameter Input
     # Silakan ubah pesan dan password ini sesuai kebutuhan
-    pesan_rahasia = "Halo, ini adalah uji coba pesan rahasia dengan Scattered LSB. Target PSNR di atas 40 dB!"
+    pesan_rahasia = "ayam ayam, kripto gacor"
     kunci_rahasia = "kunci_super_aman_123" 
 
     # 3. Proses Embedding
