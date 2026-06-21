@@ -5,7 +5,7 @@ def text_to_binary(text):
     # mengubah huruf ke angka ASCII lalu ke Biner 8 digit
     binary_msg = ''.join(format(ord(char), '08b') for char in text)
     
-    # Tambahkan delimiter di akhir biner pesan
+    # add delimiter di akhir biner pesan
     return binary_msg + DELIMITER
 
 def binary_to_text(binary_string):
