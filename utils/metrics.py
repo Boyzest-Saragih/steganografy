@@ -2,13 +2,12 @@ import numpy as np
 import math
 
 def calculate_mse(img_awal, img_stego):
-    # Mengubah tipe matriks ke float biar hasil kuadrat tidak error (overflow)
+    # Mengubah tipe matriks ke float 
     err = np.sum((img_awal.astype("float") - img_stego.astype("float")) ** 2)
     
-    # Menghitung total dimensi: baris x kolom x channel (RGB = 3)
+    # Menghitung total baris x kolom x channel (RGB = 3)
     total_pixels = img_awal.shape[0] * img_awal.shape[1] * img_awal.shape[2]
     
-    # Dibagi untuk mendapatkan rata-rata
     err /= float(total_pixels)
     
     return err
@@ -21,7 +20,7 @@ def calculate_psnr(img_awal, img_stego):
         return float('inf') 
     
     max_pixel = 255.0
-    # Eksekusi rumus PSNR (diubah bentuknya sedikit menggunakan sifat logaritma agar lebih efisien)
+
     psnr = 20 * math.log10(max_pixel / math.sqrt(mse))
     
     return psnr

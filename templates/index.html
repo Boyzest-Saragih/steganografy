@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Aplikasi Steganografi Scattered LSB</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body class="bg-light">
+
+<div class="container mt-5" style="max-width: 800px;">
+    <div class="card shadow">
+        <div class="card-header bg-dark text-white text-center py-3">
+            <h4 class="mb-0">STEGANOGRAFI SCATTERED LSB INTERFACE</h4>
+        </div>
+        <div class="card-body">
+            
+            <ul class="nav nav-tabs" id="stegoTabs" role="tablist">
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link fw-bold {% if active_tab != 'extract' %}active{% endif %}" id="embed-tab" data-bs-toggle="tab" data-bs-target="#embed" type="button" role="tab">1. Embed Pesan</button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link fw-bold {% if active_tab == 'extract' %}active{% endif %}" id="extract-tab" data-bs-toggle="tab" data-bs-target="#extract" type="button" role="tab">2. Ekstraksi Pesan</button>
+                </li>
+            </ul>
+
+            <div class="tab-content p-4 border border-top-0 rounded-bottom bg-white" id="stegoTabsContent">
+                
+                <div class="tab-pane fade {% if active_tab != 'extract' %}show active{% endif %}" id="embed" role="tabpanel">
+                    <form action="/embed" method="POST" enctype="multipart/form-data">
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">1. Gambar Cover (Carrier)</label>
+                            <input class="form-control" type="file" name="image" accept="image/png, image/jpeg" required onchange="previewImage(event, 'embedPreview')">
+                            <div class="mt-3 text-center">
+                                <img id="embedPreview" src="" alt="Preview Cover" class="img-fluid border rounded shadow-sm d-none" style="max-height: 200px;">
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">2. Pesan Rahasia</label>
+                            <textarea class="form-control" name="message" rows="3" placeholder="Masukkan pesan rahasia di sini..." required></textarea>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">3. Kunci Rahasia (Password)</label>
+                            <div class="input-group">
+                                <input type="password" class="form-control" name="key" id="embedKey" placeholder="Masukkan kunci pengaman" required>
+                                <button class="btn btn-outline-secondary" type="button" onclick="togglePassword('embedKey', this)">Lihat</button>
+                            </div>
+                        </div>
+                        <button type="submit" class="btn btn-primary w-100 py-2 fw-bold">Proses Embedding</button>
+                    </form>
+
+                    {% if embed_success %}
+                    <div class="alert alert-success mt-4">
+                        <h5 class="alert-heading fw-bold">[+] Pesan Berhasil Disisipkan!</h5>
+                        <hr>
+                        <div class="row text-center mb-3">
+                            <div class="col-md-6">
+                                <h6 class="fw-bold">Sebelum (Cover Image)</h6>
+                                <img src="{{ cover_image }}" alt="Cover Image" class="img-fluid border rounded shadow-sm mb-2" style="max-height: 200px;">
+                            </div>
+                            <div class="col-md-6">
+                                <h6 class="fw-bold">Sesudah (Stego Image)</h6>
+                                <img src="{{ result_image }}" alt="Stego Image" class="img-fluid border rounded shadow-sm mb-2" style="max-height: 200px;">
+                                <br>
+                                <a href="{{ result_image }}" download="stego_result.png" class="btn btn-success btn-sm mt-2 fw-bold">Unduh Citra Stego</a>
+                            </div>
+                        </div>
+                        
+                        <div class="row mt-3">
+                            <div class="col-12">
+                                <h6 class="fw-bold text-dark">Hasil Evaluasi Citra (Metrics):</h6>
+                                <table class="table table-sm table-bordered bg-white">
+                                    <tr>
+                                        <td class="fw-bold bg-light" width="30%">Nilai MSE</td>
+                                        <td><code class="text-dark">{{ mse }}</code></td>
+                                    </tr>
+                                    <tr>
+                                        <td class="fw-bold bg-light">Nilai PSNR</td>
+                                        <td><span class="badge bg-primary fs-6">{{ psnr }} dB</span></td>
+                                    </tr>
+                                </table>
+                                <small class="text-muted d-block">
+                                    {% if psnr|float > 40 %}
+                                    <strong>Kesimpulan:</strong> Kualitas sangat baik (Visual tidak ada bedanya dengan gambar asli secara kasat mata).
+                                    {% else %}
+                                    <strong>Kesimpulan:</strong> Terjadi banyak perubahan nilai warna pada tingkat piksel gambar.
+                                    {% endif %}
+                                </small>
+                            </div>
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+
+                <div class="tab-pane fade {% if active_tab == 'extract' %}show active{% endif %}" id="extract" role="tabpanel">
+                    <form action="/extract" method="POST" enctype="multipart/form-data">
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">1. Masukkan Citra Stego (.png)</label>
+                            <input class="form-control" type="file" name="image_ext" accept="image/png" required onchange="previewImage(event, 'extractPreview')">
+                            <div class="mt-3 text-center">
+                                <img id="extractPreview" src="" alt="Preview Stego" class="img-fluid border rounded shadow-sm d-none" style="max-height: 200px;">
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">2. Kunci Rahasia (Password)</label>
+                            <div class="input-group">
+                                <input type="password" class="form-control" name="key_ext" id="extractKey" placeholder="Masukkan kunci pembuka" required>
+                                <button class="btn btn-outline-secondary" type="button" onclick="togglePassword('extractKey', this)">Lihat</button>
+                            </div>
+                        </div>
+                        <button type="submit" class="btn btn-warning w-100 py-2 fw-bold">Proses Extraction</button>
+                    </form>
+
+                    {% if extract_success %}
+                    <div class="alert alert-info mt-4">
+                        <h5 class="fw-bold">[+] Ekstraksi Selesai!</h5>
+                        <p class="mb-2">Berikut adalah pesan rahasia yang ditemukan di dalam gambar:</p>
+                        <div class="bg-white p-3 border rounded text-monospace shadow-sm">
+                            <pre class="mb-0" style="white-space: pre-wrap; font-size: 1.1rem; color: #2c3e50;"><strong>{{ extracted_text }}</strong></pre>
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+    // Fungsi untuk menampilkan preview gambar
+    function previewImage(event, previewId) {
+        const input = event.target;
+        const preview = document.getElementById(previewId);
+        
+        if (input.files && input.files[0]) {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                preview.src = e.target.result;
+                preview.classList.remove('d-none'); // Tampilkan gambar
+            }
+            reader.readAsDataURL(input.files[0]);
+        } else {
+            preview.src = "";
+            preview.classList.add('d-none'); // Sembunyikan jika dibatalkan
+        }
+    }
+
+    // Fungsi untuk toggle visibility password
+    function togglePassword(inputId, btnElement) {
+        const input = document.getElementById(inputId);
+        if (input.type === "password") {
+            input.type = "text";
+            btnElement.innerText = "Sembunyikan";
+        } else {
+            input.type = "password";
+            btnElement.innerText = "Lihat";
+        }
+    }
+</script>
+</body>
+</html>
